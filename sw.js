@@ -1,6 +1,15 @@
 /* Aldi Run service worker — bump CACHE_VERSION whenever index.html changes */
-const CACHE_VERSION = "aldirun-v2.0.0";
-const APP_SHELL = ["./", "./index.html"];
+const CACHE_VERSION = "aldirun-v2.0.1";
+const APP_SHELL = [
+  "./",
+  "./index.html",
+  "./manifest.webmanifest",
+  "./icon-192.png",
+  "./icon-512.png",
+  "./icon-maskable-512.png",
+  "./apple-touch-icon.png",
+  "./favicon-32.png"
+];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE_VERSION).then((c) => c.addAll(APP_SHELL)));
