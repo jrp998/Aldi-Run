@@ -186,15 +186,41 @@ header{
 .shopbtn.subtle{background:rgba(255,255,255,.14);font-size:13px;padding:9px 13px}
 
 /* ---------- Sheets ---------- */
-.scrim{position:fixed;inset:0;background:rgba(0,19,60,.45);z-index:50;display:none}
+.scrim{position:fixed;inset:0;background:rgba(0,19,60,.45);z-index:100;display:none}
 .scrim.show{display:block}
 .sheet{
-  position:fixed;left:0;right:0;bottom:0;z-index:51;background:#fff;
-  border-radius:22px 22px 0 0;padding:10px 18px calc(20px + env(safe-area-inset-bottom));
-  transform:translateY(105%);transition:transform .22s ease;max-height:88vh;overflow-y:auto;
+  position:fixed;left:0;right:0;bottom:0;z-index:101;background:#fff;
+  border-radius:22px 22px 0 0;
+  padding:10px 18px calc(34px + env(safe-area-inset-bottom));
+  transform:translateY(105%);transition:transform .22s ease;
+  max-height:min(90vh, calc(100dvh - 12px - env(safe-area-inset-top)));
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+  scroll-padding-bottom:calc(120px + env(safe-area-inset-bottom));
+  touch-action:pan-y;
 }
 .sheet.show{transform:translateY(0)}
 @media (prefers-reduced-motion:reduce){.sheet{transition:none}}
+/* Keep fixed app navigation from covering bottom-sheet actions on phones. */
+body.sheet-open{overflow:hidden}
+body.sheet-open .bottom{
+  opacity:0;
+  visibility:hidden;
+  pointer-events:none;
+}
+.sheet button,.sheet a,.sheet input,.sheet select,.sheet textarea{
+  position:relative;
+  z-index:1;
+  pointer-events:auto;
+}
+.sheet > :last-child{
+  margin-bottom:calc(12px + env(safe-area-inset-bottom));
+}
+.sheet .bigact:last-child,.sheet .ghostact:last-child,.sheet .rowbtns:last-child{
+  margin-bottom:calc(18px + env(safe-area-inset-bottom));
+}
+
 .grab{width:42px;height:5px;border-radius:3px;background:#D6DFEC;margin:4px auto 12px}
 .sheethead{display:flex;align-items:center;gap:10px;margin-bottom:14px}
 .sheethead .emo{font-size:32px;width:auto}
@@ -910,8 +936,8 @@ const FIREBASE_CONFIG = {
   appId:             "1:70260485314:web:833f2ec37f7da9e249df5b",
 };
 const HOUSEHOLD = "jay-monika";
-const JAY_UID    = "HawUaObG8Qes6Y9esT0MZMWVzcX2";
-const MONIKA_UID = "91uzIbF5cWdpJKILtunv3XRrED12";
+const JAY_UID    = "PASTE_JAY_UID_AFTER_FIRST_SIGNIN";
+const MONIKA_UID = "PASTE_MONIKA_UID_AFTER_FIRST_SIGNIN";
 /* Origins allowed to postMessage grocery imports (Plated) */
 const BRIDGE_ORIGINS = [location.origin];
 /* ========================================================= */
@@ -1637,12 +1663,15 @@ function openSheetHtml(html, onClose){
   const sheet = $("#sheet");
   sheet.innerHTML = '<div class="grab"></div>'+html;
   sheetOnClose = onClose||null;
+  document.body.classList.add("sheet-open");
   $("#scrim").classList.add("show");
   sheet.classList.add("show");
+  requestAnimationFrame(()=>{ sheet.scrollTop=0; });
 }
 function closeSheetPlain(){
   $("#sheet").classList.remove("show");
   $("#scrim").classList.remove("show");
+  document.body.classList.remove("sheet-open");
   const f = sheetOnClose; sheetOnClose=null;
   if(f) f();
 }
@@ -1808,8 +1837,10 @@ function nextCatalogueDates(){
   return out.slice(0,4);
 }
 function catURL(dt){
-  const dow = dt.getDay()===3?"wed":"sat";
-  return "https://www.aldi.com.au/special-buys/special-buys-"+dow+"-"+dt.getDate()+"-"+MONTHS[dt.getMonth()]+"/";
+  const y = dt.getFullYear();
+  const m = String(dt.getMonth()+1).padStart(2,"0");
+  const d = String(dt.getDate()).padStart(2,"0");
+  return "https://www.aldi.com.au/special-buys/"+y+"-"+m+"-"+d;
 }
 function specThumb(dt, key){
   const pic = know.catalog && know.catalog.pics && know.catalog.pics[key];
@@ -1845,11 +1876,12 @@ function renderSpecials(){
         '<span class="when">'+(isPast?"ON NOW":"UPCOMING")+'</span>'+
       '</div>'+
       (hl && hl.length ? '<ul class="spechl">'+hl.map(x=>'<li>'+esc(x)+'</li>').join("")+'</ul>' : '')+
-      '<a class="speclink" href="'+catURL(dt)+'" target="_blank" rel="noopener">Open catalogue \u2197</a>'+
+      '<a class="speclink" href="'+catURL(dt)+'" target="_blank" rel="noopener noreferrer">View this Special Buys date \u2197</a>'+
+      '<a class="ghostact" href="https://www.catalogues.aldi.com.au/" target="_blank" rel="noopener noreferrer" style="display:block;text-align:center;text-decoration:none">Open all current catalogues</a>'+
     '</div>';
   });
-  html += '<div class="specnote">Catalogue links follow ALDI\u2019s usual dated URL pattern \u2014 if one 404s, use the hub: '+
-    '<a href="https://www.aldi.com.au/special-buys" target="_blank" rel="noopener" style="font-weight:800">aldi.com.au/special-buys</a>'+
+  html += '<div class="specnote">Dated links use ALDI\u2019s current YYYY-MM-DD format. For the postcode-based catalogue viewer, use: '+
+    '<a href="https://www.catalogues.aldi.com.au/" target="_blank" rel="noopener noreferrer" style="font-weight:800">catalogues.aldi.com.au</a>'+
     '<br>Tap a cover to save a catalogue thumbnail from your phone \u2014 it syncs to both of you.</div>';
   wrap.innerHTML = html;
   wrap.querySelectorAll(".setpic").forEach(b=>b.onclick=(e)=>{ e.preventDefault(); e.stopPropagation(); setCataloguePic(b.dataset.key); });

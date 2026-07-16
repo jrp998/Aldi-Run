@@ -23,3 +23,26 @@ After GitHub Pages updates:
 4. Reopen the site and choose **Add to Home Screen** / **Install app** again.
 
 The service-worker cache has been bumped to `aldirun-v2.0.1`.
+
+
+## Special Buys link fix
+
+This version replaces ALDI's obsolete slug-style catalogue links with the current format:
+
+`https://www.aldi.com.au/special-buys/YYYY-MM-DD`
+
+It also provides a fallback button to ALDI's official postcode-based catalogue viewer.
+
+Service-worker cache: `aldirun-v2.0.2`
+
+
+## Mobile bottom-sheet/navigation fix
+
+This version prevents the fixed bottom app navigation from covering controls inside
+settings, update/restart prompts, receipt scanning, and other bottom sheets.
+
+Changes:
+- Bottom navigation is temporarily hidden while a sheet is open.
+- Sheets use `100dvh`, safe-area padding, momentum scrolling, and extra bottom space.
+- Sheet and scrim z-index values were raised.
+- Cache version: `aldirun-v2.0.3`.
