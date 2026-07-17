@@ -2517,17 +2517,17 @@ function openReceiptReview(lines, rawText, manual){
 ========================================================= */
 function importPlatedPayload(p){
   const items=[]; 
-  (p.items||[]).forEach(x=>{ if(x&&x.name) items.push({name:x.name, meal:x.meal||"", qty:x.quantity||""}); });
+  (p.items||[]).forEach(x=>{ if(x&&x.name) items.push({name:x.name, meal:x.meal||"", qty:x.quantity||"", note:x.note||""}); });
   (p.meals||[]).forEach(m=>{ (m.ingredients||m.ings||[]).forEach(g=>{
     const nm = typeof g==="string"?g:(g.name||"");
-    if(nm) items.push({name:nm, meal:m.name||"", qty:(g.quantity||g.qty||"")});
+    if(nm) items.push({name:nm, meal:m.name||"", qty:(g.quantity||g.qty||""), note:(g.note||m.note||"")});
   }); });
   if(!items.length){ toast("No items found in that payload"); return false; }
   openSheetHtml(
     '<div class="sheethead"><div class="emo">\u{1F37D}\uFE0F</div><h3>Import from Plated</h3></div>'+
     '<div class="hint" style="margin:-8px 0 10px">Untick anything you don\u2019t want. Items land in the right aisle automatically.</div>'+
     '<div>'+items.map((x,i)=>'<div class="revline"><input type="checkbox" checked data-i="'+i+'" style="width:22px;height:22px">'+
-      '<div class="raw">'+esc(x.name)+(x.qty?'<small>'+esc(x.qty)+'</small>':'')+(x.meal?'<small>\uD83C\uDF7D '+esc(x.meal)+'</small>':'')+'</div></div>').join("")+'</div>'+
+      '<div class="raw">'+esc(x.name)+(x.qty?'<small>'+esc(x.qty)+'</small>':'')+(x.note?'<small>'+esc(x.note)+'</small>':(x.meal?'<small>\uD83C\uDF7D '+esc(x.meal)+'</small>':''))+'</div></div>').join("")+'</div>'+
     '<button class="bigact" id="plGo">Add selected to list</button>'+
     '<button class="ghostact" id="plNo">Cancel</button>'
   );
@@ -2536,8 +2536,9 @@ function importPlatedPayload(p){
     let n=0;
     document.querySelectorAll('#sheet input[type=checkbox]:checked').forEach(cb=>{
       const x=items[+cb.dataset.i];
-      const it=addItem(x.name, x.meal, {});
-      if(it && x.qty){ it.note = (it.note?it.note+" \u00B7 ":"")+x.qty; it.updatedAt=now(); }
+      const it=addItem(x.name, x.meal, {qty:x.qty});
+      // note is the "why it's on the list" — refresh Plated's own notes, never clobber a hand-typed one
+      if(it && x.note && (!it.note || /^For /.test(it.note))){ it.note = x.note; it.updatedAt=now(); }
       n++;
     });
     saveState(); renderAll(); closeSheetPlain();
